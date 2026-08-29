@@ -282,10 +282,14 @@ function openClip(clipId) {
   document.getElementById('clip-desc').textContent = clip.description || '';
   const link = document.getElementById('clip-link');
   const popupLink = document.getElementById('clip-link-popup');
+  const copyLink = document.getElementById('clip-link-copy');
+  const copyMsg = document.getElementById('clip-copy-msg');
+  copyMsg.textContent = '';
   if (clip.pageUrl) {
     link.href = clip.pageUrl;
     link.style.display = 'inline';
     popupLink.style.display = 'inline';
+    copyLink.style.display = 'inline';
     popupLink.onclick = (e) => {
       e.preventDefault();
       window.open(
@@ -294,9 +298,19 @@ function openClip(clipId) {
         'width=420,height=760,left=100,top=80,noopener'
       );
     };
+    copyLink.onclick = async (e) => {
+      e.preventDefault();
+      try {
+        await navigator.clipboard.writeText(clip.pageUrl);
+        copyMsg.textContent = 'コピーしました。もう一方の画面のアドレスバーに貼り付けてください。';
+      } catch (err) {
+        copyMsg.textContent = 'コピーに失敗しました: ' + err.message;
+      }
+    };
   } else {
     link.style.display = 'none';
     popupLink.style.display = 'none';
+    copyLink.style.display = 'none';
   }
   document.getElementById('cue-list').hidden = false;
   document.getElementById('narration-panel').hidden = true;
