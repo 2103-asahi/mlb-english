@@ -331,9 +331,10 @@ document.querySelectorAll('.mode-btn').forEach(btn => {
 });
 
 async function ensureTranslations(clip) {
-  if (Array.isArray(clip.translations) && clip.translations.length === clip.cues.length) return;
+  const sentences = groupCuesIntoSentences(clip.cues);
+  if (Array.isArray(clip.translations) && clip.translations.length === sentences.length) return;
   try {
-    const translations = await translateCues(clip.cues);
+    const translations = await translateCues(sentences);
     const clips = loadClips();
     const idx = clips.findIndex(c => c.id === clip.id);
     if (idx === -1) return;
@@ -381,20 +382,42 @@ async function translateCues(cues) {
   return parsed;
 }
 
+function groupCuesIntoSentences(cues) {
+  const groups = [];
+  let current = null;
+  cues.forEach(cue => {
+    const text = cue.text.trim();
+    if (!text) return;
+    if (!current) {
+      current = { start: cue.start, end: cue.end, text };
+    } else {
+      current.end = cue.end;
+      current.text += ' ' + text;
+    }
+    if (/[.!?]["')\]]?$/.test(text)) {
+      groups.push(current);
+      current = null;
+    }
+  });
+  if (current) groups.push(current);
+  return groups;
+}
+
 function renderCues(clip) {
   const container = document.getElementById('cue-list');
+  const sentences = groupCuesIntoSentences(clip.cues);
   container.innerHTML = '';
-  clip.cues.forEach((cue, i) => {
+  sentences.forEach((sentence, i) => {
     const row = document.createElement('div');
     row.className = 'cue-row';
-    const time = `<div class="cue-time">${formatTime(cue.start)}</div>`;
+    const time = `<div class="cue-time">${formatTime(sentence.start)}</div>`;
 
     if (currentMode === 'shadowing') {
       const translation = clip.translations ? clip.translations[i] : null;
       const translationHtml = translation
         ? `<div class="cue-translation">${escapeHtml(translation)}</div>`
         : `<div class="cue-translation muted">翻訳中...</div>`;
-      row.innerHTML = `${time}<div class="cue-text">${escapeHtml(cue.text)}</div>
+      row.innerHTML = `${time}<div class="cue-text">${escapeHtml(sentence.text)}</div>
         ${translationHtml}
         <div class="cue-actions"><button data-i="${i}" class="card-btn">単語帳に追加</button></div>`;
     } else {
@@ -409,13 +432,13 @@ function renderCues(clip) {
   container.querySelectorAll('.card-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const i = Number(btn.dataset.i);
-      addCardFromCue(clip, i);
+      addCardFromCue(clip, sentences[i]);
     });
   });
   container.querySelectorAll('.check-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const i = Number(btn.dataset.i);
-      checkDictation(clip, i);
+      checkDictation(sentences[i], i);
     });
   });
 }
@@ -426,17 +449,15 @@ function formatTime(sec) {
   return `${m}:${s}`;
 }
 
-function addCardFromCue(clip, cueIndex) {
-  const cue = clip.cues[cueIndex];
-  const phrase = prompt('カードにする単語・フレーズを入力（そのままでもOK）:', cue.text);
+function addCardFromCue(clip, sentence) {
+  const phrase = prompt('カードにする単語・フレーズを入力（そのままでもOK）:', sentence.text);
   if (!phrase) return;
   const cards = loadCards();
   const newCard = {
     id: uid(),
     clipId: clip.id,
-    cueIndex,
     phrase: phrase.trim(),
-    context: cue.text,
+    context: sentence.text,
     ease: 2.5,
     reps: 0,
     interval: 0,
@@ -454,19 +475,18 @@ function normalizeForDiff(str) {
   return str.toLowerCase().replace(/[.,!?;:'"]/g, '').trim().split(/\s+/).filter(Boolean);
 }
 
-function checkDictation(clip, cueIndex) {
-  const cue = clip.cues[cueIndex];
+function checkDictation(sentence, cueIndex) {
   const input = document.querySelector(`.dictation-input[data-i="${cueIndex}"]`);
   const resultEl = document.querySelector(`.diff-result[data-i="${cueIndex}"]`);
   const userWords = normalizeForDiff(input.value);
-  const correctWords = normalizeForDiff(cue.text);
+  const correctWords = normalizeForDiff(sentence.text);
 
   const rendered = correctWords.map((w, i) => {
     const match = userWords[i] === w;
     return `<span class="${match ? 'diff-correct' : 'diff-wrong'}">${escapeHtml(w)}</span>`;
   }).join(' ');
 
-  resultEl.innerHTML = `<div style="margin-top:6px;">${rendered}</div><div class="muted" style="margin-top:4px;">正解: ${escapeHtml(cue.text)}</div>`;
+  resultEl.innerHTML = `<div style="margin-top:6px;">${rendered}</div><div class="muted" style="margin-top:4px;">正解: ${escapeHtml(sentence.text)}</div>`;
 }
 
 // ---------- SRS review ----------
