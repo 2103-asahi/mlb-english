@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MLB English</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<header>
+  <h1>MLB English</h1>
+  <nav>
+    <button data-view="list" class="nav-btn active">クリップ一覧</button>
+    <button data-view="import" class="nav-btn">取り込み</button>
+    <button data-view="review" class="nav-btn">復習<span id="due-count" class="badge" hidden></span></button>
+    <button data-view="settings" class="nav-btn">設定</button>
+  </nav>
+</header>
+
+<main>
+  <section id="view-list" class="view active">
+    <div id="clip-list"></div>
+  </section>
+
+  <section id="view-import" class="view">
+    <p>Tampermonkeyスクリプトでコピーしたクリップのjsonを貼り付けてください。</p>
+    <textarea id="import-textarea" rows="10" placeholder='{"title": "...", "cues": [...] }'></textarea>
+    <button id="import-btn">取り込む</button>
+    <p id="import-msg"></p>
+  </section>
+
+  <section id="view-clip" class="view">
+    <button class="back-btn" data-target="list">← 一覧へ</button>
+    <h2 id="clip-title"></h2>
+    <p id="clip-desc" class="muted"></p>
+    <p><a id="clip-link" href="#" target="_blank" rel="noopener">元動画を開く</a></p>
+
+    <div class="mode-tabs">
+      <button class="mode-btn active" data-mode="shadowing">シャドーイング</button>
+      <button class="mode-btn" data-mode="dictation">ディクテーション</button>
+      <button class="mode-btn" data-mode="narration">自分実況</button>
+    </div>
+
+    <div id="cue-list"></div>
+
+    <div id="narration-panel" hidden>
+      <p class="muted">動画を見ながら、字幕を見ずに自分の言葉で実況・感想を英語で書いてみてください。書き終えたらAIが実際の実況と比較してフィードバックします。</p>
+      <textarea id="narration-textarea" rows="6" placeholder="Example: Chourio hits a deep fly ball to left field..."></textarea>
+      <button id="narration-btn">AIフィードバックをもらう</button>
+      <p id="narration-status" class="muted"></p>
+      <div id="narration-result"></div>
+    </div>
+  </section>
+
+  <section id="view-settings" class="view">
+    <h2>設定</h2>
+    <p class="muted">自分実況フィードバックにはGemini APIキーが必要です。<a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a>で取得したキーを貼り付けてください。このキーはこの端末のブラウザ内にのみ保存され、どこにも送信されません（Gemini API呼び出し時のみ使用）。</p>
+    <input type="password" id="gemini-key-input" placeholder="Gemini APIキー" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:6px;">
+    <button id="save-key-btn">保存</button>
+    <p id="save-key-msg" class="muted"></p>
+
+    <h2 style="margin-top:32px;">PC/スマホ同期（Supabase）</h2>
+    <p class="muted">Supabaseのプロジェクト設定 → API にある「Project URL」と「anon public key」を貼り付けてください。両方の端末で同じ値を設定すると、クリップや単語帳が自動的に同期されます。</p>
+    <input type="text" id="supabase-url-input" placeholder="Project URL (https://xxxx.supabase.co)" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:6px; margin-bottom:8px;">
+    <input type="password" id="supabase-key-input" placeholder="anon public key" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:6px;">
+    <button id="save-supabase-btn">保存して同期</button>
+    <p id="save-supabase-msg" class="muted"></p>
+  </section>
+
+  <section id="view-review" class="view">
+    <div id="review-empty" class="muted" hidden>今日復習するカードはありません。</div>
+    <div id="review-card" hidden>
+      <p class="muted" id="review-progress"></p>
+      <div class="card-box">
+        <p id="review-front" class="review-text"></p>
+        <p id="review-context" class="muted"></p>
+        <button id="review-reveal-btn">答えを見る</button>
+        <div id="review-back" hidden>
+          <p id="review-answer" class="review-text"></p>
+          <div class="rate-row">
+            <button data-quality="2">難しい</button>
+            <button data-quality="4">普通</button>
+            <button data-quality="5">簡単</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>

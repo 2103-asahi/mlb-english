@@ -1,0 +1,194 @@
+:root {
+  --navy: #002d72;
+  --orange: #ff5910;
+  --bg: #f7f7f8;
+  --text: #1a1a1a;
+  --muted: #6b7280;
+  --border: #e2e2e5;
+  --good: #1a8a4c;
+  --bad: #c62828;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, "Segoe UI", "Hiragino Kaku Gothic ProN", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+header {
+  background: var(--navy);
+  color: white;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+header h1 { font-size: 18px; margin: 0; }
+
+nav { display: flex; gap: 8px; }
+
+.nav-btn {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.4);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  position: relative;
+}
+
+.nav-btn.active { background: var(--orange); border-color: var(--orange); }
+
+.badge {
+  background: white;
+  color: var(--orange);
+  border-radius: 10px;
+  padding: 0 6px;
+  font-size: 11px;
+  margin-left: 6px;
+}
+
+main { padding: 16px; max-width: 720px; margin: 0 auto; }
+
+.view { display: none; }
+.view.active { display: block; }
+
+.muted { color: var(--muted); font-size: 14px; }
+
+textarea {
+  width: 100%;
+  font-family: monospace;
+  font-size: 12px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+button {
+  font-family: inherit;
+}
+
+#import-btn, .back-btn, #narration-btn, #save-key-btn {
+  margin-top: 8px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  background: var(--navy);
+  color: white;
+  cursor: pointer;
+}
+
+.clip-card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 10px;
+  cursor: pointer;
+}
+
+.clip-card:hover { border-color: var(--navy); }
+
+.clip-card h3 { margin: 0 0 4px; font-size: 16px; }
+.clip-card .meta { font-size: 12px; color: var(--muted); }
+
+.mode-tabs { display: flex; gap: 8px; margin: 16px 0; }
+
+.mode-btn {
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: white;
+  cursor: pointer;
+}
+
+.mode-btn.active { background: var(--navy); color: white; border-color: var(--navy); }
+
+.cue-row {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+}
+
+.cue-time { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+.cue-text { font-size: 15px; }
+
+.cue-actions { margin-top: 6px; display: flex; gap: 8px; }
+.cue-actions button {
+  font-size: 12px;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  cursor: pointer;
+}
+
+#narration-textarea {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+#narration-result {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-top: 10px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.dictation-input {
+  width: 100%;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+.diff-correct { color: var(--good); }
+.diff-wrong { color: var(--bad); text-decoration: line-through; }
+
+.card-box {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 24px;
+  text-align: center;
+}
+
+.review-text { font-size: 18px; margin: 12px 0; }
+
+#review-reveal-btn {
+  padding: 8px 20px;
+  border: none;
+  border-radius: 6px;
+  background: var(--orange);
+  color: white;
+  cursor: pointer;
+}
+
+.rate-row { display: flex; gap: 8px; justify-content: center; margin-top: 12px; }
+
+.rate-row button {
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: white;
+  cursor: pointer;
+}
+
+.rate-row button:hover { background: var(--bg); }
