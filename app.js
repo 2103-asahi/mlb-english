@@ -52,6 +52,7 @@ function clipToRow(clip) {
     title: clip.title,
     description: clip.description,
     cues: clip.cues,
+    translations: clip.translations || null,
     updated_at: clip.updatedAt || new Date().toISOString(),
   };
 }
@@ -63,6 +64,7 @@ function rowToClip(row) {
     title: row.title,
     description: row.description,
     cues: row.cues,
+    translations: row.translations || null,
     updatedAt: row.updated_at,
   };
 }
@@ -287,6 +289,7 @@ function openClip(clipId) {
   document.getElementById('narration-status').textContent = '';
   document.getElementById('narration-result').innerHTML = '';
   renderCues(clip);
+  ensureTranslations(clip);
   showViewRaw('clip');
 }
 
@@ -322,9 +325,61 @@ document.querySelectorAll('.mode-btn').forEach(btn => {
       document.getElementById('cue-list').hidden = false;
       document.getElementById('narration-panel').hidden = true;
       renderCues(clip);
+      if (currentMode === 'shadowing') ensureTranslations(clip);
     }
   });
 });
+
+async function ensureTranslations(clip) {
+  if (Array.isArray(clip.translations) && clip.translations.length === clip.cues.length) return;
+  try {
+    const translations = await translateCues(clip.cues);
+    const clips = loadClips();
+    const idx = clips.findIndex(c => c.id === clip.id);
+    if (idx === -1) return;
+    clips[idx].translations = translations;
+    clips[idx].updatedAt = new Date().toISOString();
+    saveClips(clips);
+    pushClip(clips[idx]);
+    if (currentClipId === clip.id && currentMode === 'shadowing') {
+      renderCues(clips[idx]);
+    }
+  } catch (e) {
+    console.error('translation failed', e);
+  }
+}
+
+async function translateCues(cues) {
+  const key = loadGeminiKey();
+  if (!key) throw new Error('Gemini APIキーが設定されていません。');
+  const model = 'gemini-2.5-flash';
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
+  const body = {
+    contents: [{ role: 'user', parts: [{ text: JSON.stringify(cues.map(c => c.text)) }] }],
+    systemInstruction: {
+      parts: [{
+        text: 'あなたは野球実況の翻訳者です。次のJSON配列に含まれる英語の実況フレーズを、自然な日本語に順番通り翻訳してください。出力は同じ要素数のJSON配列のみを返してください（説明文やコードブロック記号は一切不要）。各要素は日本語訳の文字列のみとしてください。',
+      }],
+    },
+    generationConfig: { temperature: 0.3, maxOutputTokens: 4096 },
+  };
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`翻訳APIエラー (${res.status}): ${errText.slice(0, 200)}`);
+  }
+  const data = await res.json();
+  let text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) throw new Error('翻訳結果を取得できませんでした。');
+  text = text.trim().replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/```\s*$/, '');
+  const parsed = JSON.parse(text);
+  if (!Array.isArray(parsed)) throw new Error('翻訳結果の形式が不正です。');
+  return parsed;
+}
 
 function renderCues(clip) {
   const container = document.getElementById('cue-list');
@@ -335,7 +390,12 @@ function renderCues(clip) {
     const time = `<div class="cue-time">${formatTime(cue.start)}</div>`;
 
     if (currentMode === 'shadowing') {
+      const translation = clip.translations ? clip.translations[i] : null;
+      const translationHtml = translation
+        ? `<div class="cue-translation">${escapeHtml(translation)}</div>`
+        : `<div class="cue-translation muted">翻訳中...</div>`;
       row.innerHTML = `${time}<div class="cue-text">${escapeHtml(cue.text)}</div>
+        ${translationHtml}
         <div class="cue-actions"><button data-i="${i}" class="card-btn">単語帳に追加</button></div>`;
     } else {
       row.innerHTML = `${time}
