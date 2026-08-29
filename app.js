@@ -108,16 +108,29 @@ async function pushCard(card) {
   if (error) console.error('pushCard failed', error);
 }
 
-function mergeById(localList, remoteList, toLocal) {
-  const byId = new Map(localList.map(item => [item.id, item]));
-  remoteList.forEach(row => {
+async function deleteClipRemote(clipId) {
+  const client = getSupabaseClient();
+  if (!client) return;
+  const { error } = await client.from('clips').delete().eq('id', clipId);
+  if (error) console.error('deleteClipRemote failed', error);
+}
+async function deleteCardsForClipRemote(clipId) {
+  const client = getSupabaseClient();
+  if (!client) return;
+  const { error } = await client.from('cards').delete().eq('clip_id', clipId);
+  if (error) console.error('deleteCardsForClipRemote failed', error);
+}
+
+function reconcileWithRemote(localList, remoteList, toLocal) {
+  const localById = new Map(localList.map(item => [item.id, item]));
+  return remoteList.map(row => {
     const remote = toLocal(row);
-    const local = byId.get(remote.id);
-    if (!local || !local.updatedAt || new Date(remote.updatedAt) > new Date(local.updatedAt)) {
-      byId.set(remote.id, remote);
+    const local = localById.get(remote.id);
+    if (local && local.updatedAt && new Date(local.updatedAt) > new Date(remote.updatedAt)) {
+      return local;
     }
+    return remote;
   });
-  return [...byId.values()];
 }
 
 async function syncFromSupabase() {
@@ -131,12 +144,12 @@ async function syncFromSupabase() {
   if (cardsRes.error) console.error('sync cards failed', cardsRes.error);
 
   if (!clipsRes.error && clipsRes.data) {
-    const merged = mergeById(loadClips(), clipsRes.data, rowToClip);
-    saveClips(merged);
+    const reconciled = reconcileWithRemote(loadClips(), clipsRes.data, rowToClip);
+    saveClips(reconciled);
   }
   if (!cardsRes.error && cardsRes.data) {
-    const merged = mergeById(loadCards(), cardsRes.data, rowToCard);
-    saveCards(merged);
+    const reconciled = reconcileWithRemote(loadCards(), cardsRes.data, rowToCard);
+    saveCards(reconciled);
   }
 }
 
@@ -210,10 +223,37 @@ function renderClipList() {
     const card = document.createElement('div');
     card.className = 'clip-card';
     const date = new Date(clip.capturedAt).toLocaleDateString('ja-JP');
-    card.innerHTML = `<h3>${escapeHtml(clip.title)}</h3><div class="meta">${date} ・ 字幕${clip.cues.length}行</div>`;
+    card.innerHTML = `
+      <div class="clip-card-row">
+        <div>
+          <h3>${escapeHtml(clip.title)}</h3>
+          <div class="meta">${date} ・ 字幕${clip.cues.length}行</div>
+        </div>
+        <button class="delete-clip-btn" data-id="${clip.id}">削除</button>
+      </div>`;
     card.addEventListener('click', () => openClip(clip.id));
     container.appendChild(card);
   });
+
+  container.querySelectorAll('.delete-clip-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.id;
+      if (!confirm('このクリップと関連する単語帳カードを削除しますか？')) return;
+      deleteClip(id);
+    });
+  });
+}
+
+function deleteClip(clipId) {
+  const clips = loadClips().filter(c => c.id !== clipId);
+  saveClips(clips);
+  const cards = loadCards().filter(c => c.clipId !== clipId);
+  saveCards(cards);
+  deleteClipRemote(clipId);
+  deleteCardsForClipRemote(clipId);
+  renderClipList();
+  updateDueBadge();
 }
 
 function escapeHtml(str) {
@@ -249,6 +289,19 @@ function openClip(clipId) {
   renderCues(clip);
   showViewRaw('clip');
 }
+
+document.getElementById('edit-title-btn').addEventListener('click', () => {
+  const clips = loadClips();
+  const clip = clips.find(c => c.id === currentClipId);
+  if (!clip) return;
+  const newTitle = prompt('新しいタイトル:', clip.title);
+  if (!newTitle || !newTitle.trim()) return;
+  clip.title = newTitle.trim();
+  clip.updatedAt = new Date().toISOString();
+  saveClips(clips);
+  pushClip(clip);
+  document.getElementById('clip-title').textContent = clip.title;
+});
 
 function showViewRaw(name) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));

@@ -32,7 +32,10 @@
 
   <section id="view-clip" class="view">
     <button class="back-btn" data-target="list">← 一覧へ</button>
-    <h2 id="clip-title"></h2>
+    <div style="display:flex; align-items:center; gap:8px;">
+      <h2 id="clip-title" style="margin:0;"></h2>
+      <button id="edit-title-btn" style="font-size:12px; padding:4px 8px; border:1px solid var(--border); border-radius:4px; background:var(--bg); cursor:pointer;">タイトル編集</button>
+    </div>
     <p id="clip-desc" class="muted"></p>
     <p><a id="clip-link" href="#" target="_blank" rel="noopener">元動画を開く</a></p>
 
