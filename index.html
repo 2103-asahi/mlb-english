@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MLB English</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<meta name="theme-color" content="#002d72">
 <link rel="stylesheet" href="style.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -37,7 +40,11 @@
       <button id="edit-title-btn" style="font-size:12px; padding:4px 8px; border:1px solid var(--border); border-radius:4px; background:var(--bg); cursor:pointer;">タイトル編集</button>
     </div>
     <p id="clip-desc" class="muted"></p>
-    <p><a id="clip-link" href="#" target="_blank" rel="noopener">元動画を開く</a></p>
+    <p>
+      <a id="clip-link" href="#" target="_blank" rel="noopener">元動画を開く</a>
+      ・
+      <a id="clip-link-popup" href="#" style="cursor:pointer;">動画を小窓で開く</a>
+    </p>
 
     <div class="mode-tabs">
       <button class="mode-btn active" data-mode="shadowing">シャドーイング</button>

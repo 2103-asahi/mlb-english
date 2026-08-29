@@ -4,6 +4,10 @@ const STORAGE_GEMINI_KEY = 'mlbenglish_gemini_key';
 const STORAGE_SUPABASE_URL = 'mlbenglish_supabase_url';
 const STORAGE_SUPABASE_KEY = 'mlbenglish_supabase_key';
 
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
 function uid() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 }
@@ -277,11 +281,22 @@ function openClip(clipId) {
   document.getElementById('clip-title').textContent = clip.title;
   document.getElementById('clip-desc').textContent = clip.description || '';
   const link = document.getElementById('clip-link');
+  const popupLink = document.getElementById('clip-link-popup');
   if (clip.pageUrl) {
     link.href = clip.pageUrl;
     link.style.display = 'inline';
+    popupLink.style.display = 'inline';
+    popupLink.onclick = (e) => {
+      e.preventDefault();
+      window.open(
+        clip.pageUrl,
+        'mlbVideoPopup',
+        'width=420,height=760,left=100,top=80,noopener'
+      );
+    };
   } else {
     link.style.display = 'none';
+    popupLink.style.display = 'none';
   }
   document.getElementById('cue-list').hidden = false;
   document.getElementById('narration-panel').hidden = true;
